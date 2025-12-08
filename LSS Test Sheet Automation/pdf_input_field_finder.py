@@ -1,7 +1,7 @@
 from pypdf import PdfReader
 
 # REPLAACE WITH YOUR FILE NAME
-pdf_path = "95tsbronzestar2020_fillable.pdf" 
+pdf_path = "95on_sfa_test_sheet-20231121-fillable.pdf" 
 reader = PdfReader(pdf_path)
 fields = reader.get_fields()
 

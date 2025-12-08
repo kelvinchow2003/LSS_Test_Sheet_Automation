@@ -1,6 +1,6 @@
 from pypdf import PdfReader, PdfWriter
 
-INPUT_PDF = "95tsbronzestar2020_fillable.pdf"
+INPUT_PDF = "95on_sfa_test_sheet-20231121-fillable.pdf"
 
 OUTPUT_PDF = "debug_names.pdf"
 
