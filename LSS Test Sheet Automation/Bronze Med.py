@@ -8,52 +8,55 @@ INPUT_PDF = "95tsbronzemedallion2020_fillable.pdf"
 INPUT_CSV = "roster.csv"
 OUTPUT_FOLDER = "filled_forms/"
 
-# --- THE MAPPING (Exact working copy from your last message) ---
+# --- INVOICING DATA (HOST & FACILITY) ---
+HOST_DATA = {
+    "host_name": "City of Markham",
+    "host_area_code": "905",               # Split Area Code
+    "host_phone_num": "4703590 EXT 4342",  # Split Number
+    "host_addr": "8600 McCowan Road",
+    "host_city": "Markham",
+    "host_prov": "ON",
+    "host_postal": "L3P 3M2",
+    "facility_name": "Centennial C.C."
+}
+
+# --- FIELD MAPPING ---
+# Text19 = Host Name
+# Text20 = Area Code
+# Text21 = Phone Number
+# Text22 = Address
+HOST_FIELD_MAP = {
+    "host_name": "Text19",      
+    "host_area_code": "Text20", # New mapping for Area Code
+    "host_phone_num": "Text21", # New mapping for Main Number
+    "host_addr": "Text22",      
+    "host_city": "Text23",      
+    "host_prov": "Text24",      
+    "host_postal": "Text25",    
+    "facility_name": "Text29"   
+}
+
+# --- CANDIDATE MAPPING (UNCHANGED) ---
 candidate_map = [
     # === PAGE 1 (Candidates 1-6) ===
-    # 1: WORKING
-    {"base": "1", "s": ".0"},           
-    
-    # 2: WORKING
-    {"base": "1", "s": ".1.0"},         
-    
-    # 3: WORKING
-    {"base": "1", "s": ".1.1.0"},       
-    
-    # 4: WORKING
-    {"base": "1", "s": ".1.1.1.0"},     
-    
-    # 5: WORKING
-    {"base": "1", "s": ".1.1.1.1.0"},   
-    
-    # 6: WORKING
-    {"base": "1", "s": ".1.1.1.1.1"},   
+    {"base": "1", "s": ".0"},           # 1
+    {"base": "1", "s": ".1.0"},         # 2
+    {"base": "1", "s": ".1.1.0"},       # 3
+    {"base": "1", "s": ".1.1.1.0"},     # 4
+    {"base": "1", "s": ".1.1.1.1.0"},   # 5
+    {"base": "1", "s": ".1.1.1.1.1"},   # 6
 
     # === PAGE 2 (Candidates 7-13) ===
-    # 7: WORKING
-    {"base": "", "s": ".0.0"},              
-    
-    # 8: WORKING
-    {"base": "", "s": ".0.1.0"},        
-    
-    # 9: WORKING
-    {"base": "", "s": ".0.1.1.0"},      
-    
-    # 10: WORKING
-    {"base": "", "s": ".0.1.1.1.0"},    
-    
-    # 11: WORKING
-    {"base": "", "s": ".0.1.1.1.1.0"},  
-    
-    # 12: WORKING
-    {"base": "", "s": ".0.1.1.1.1.1.0"},
-    
-    # 13: WORKING
-    {"base": "", "s": ".0.1.1.1.1.1.1"},
+    {"base": "", "s": ".0.0"},          # 7
+    {"base": "", "s": ".0.1.0"},        # 8
+    {"base": "", "s": ".0.1.1.0"},      # 9
+    {"base": "", "s": ".0.1.1.1.0"},    # 10
+    {"base": "", "s": ".0.1.1.1.1.0"},  # 11
+    {"base": "", "s": ".0.1.1.1.1.1.0"},# 12
+    {"base": "", "s": ".0.1.1.1.1.1.1"} # 13
 ]
 
 def clean_name(raw_name):
-    """Converts 'Ausar , Lautaro' to 'Lautaro Ausar'."""
     if pd.isna(raw_name): return ""
     raw_name = str(raw_name)
     if "," in raw_name:
@@ -68,11 +71,15 @@ def fill_pdf(batch_df, batch_num):
     writer.append(reader)
     
     data_map = {}
+
+    # --- 1. APPLY HOST & FACILITY DATA ---
+    for key, pdf_field in HOST_FIELD_MAP.items():
+        data_map[pdf_field] = HOST_DATA[key]
     
+    # --- 2. APPLY CANDIDATE DATA ---
     for i, (idx, row) in enumerate(batch_df.iterrows()):
         if i >= len(candidate_map): break
         
-        # Get the suffix pattern for this candidate
         slot = candidate_map[i]
         b = slot["base"]
         s = slot["s"]
@@ -88,10 +95,10 @@ def fill_pdf(batch_df, batch_num):
         f_mm = f"DOBM{b}{s}"
         f_yy = f"DOBY{b}{s}"
 
-        # 1. Clean Name
+        # Clean Name
         full_name = clean_name(row.get("AttendeeName", ""))
         
-        # 2. Parse Date
+        # Parse Date
         raw_dob = row.get("DateOfBirth", "")
         dd, mm, yy = "", "", ""
         if pd.notna(raw_dob):
@@ -99,11 +106,10 @@ def fill_pdf(batch_df, batch_num):
                 dt = pd.to_datetime(raw_dob, dayfirst=True)
                 dd = str(dt.day).zfill(2)
                 mm = str(dt.month).zfill(2)
-                # CHANGE: Only take the last 2 digits ([-2:])
                 yy = str(dt.year)[-2:] 
             except: pass
 
-        # 3. Map Data
+        # Map Data
         data_map[f_name] = full_name
         data_map[f_addr] = str(row.get("Street", ""))
         data_map[f_city] = str(row.get("City", ""))
